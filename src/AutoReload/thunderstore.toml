@@ -7,7 +7,7 @@ repository = "https://thunderstore.io"
 [package]
 namespace = "Hamunii"
 name = "AutoReload"
-description = "Automatically reloads plugins by watching BepInEx/plugins/ for file changes."
+description = "Automatically reloads plugins by watching BepInEx/plugins/ for file changes. For developers."
 websiteUrl = "https://github.com/Hamunii/AutoReload"
 containsNsfwContent = false
 
