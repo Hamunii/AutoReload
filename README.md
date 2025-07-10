@@ -2,6 +2,9 @@
 
 A BepInEx 5 plugin that automatically reloads plugins by watching `BepInEx/plugins/` for file changes.
 
+> [!WARNING]  
+> I have been informed that the `FileSystemWatcher` may work terribly on Windows. This plugin relies on `FileSystemWatcher` working properly. If you are having issues with it, try running under Linux.
+
 ## Implementing Support
 
 To make your plugin work with reloading, it must implement the `OnDestroy` method in the main plugin class to clean up after itself. An example of a good plugin:
