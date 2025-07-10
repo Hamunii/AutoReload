@@ -1,0 +1,35 @@
+<Project>
+
+  <!-- Set extra NuGet sources -->
+  <PropertyGroup>
+    <RestoreAdditionalProjectSources>
+      https://nuget.bepinex.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3" PrivateAssets="all" />
+    <PackageReference Include="Hamunii.BepInEx.AutoPlugin" Version="2.0.*" PrivateAssets="all" />
+    <PackageReference Include="UnityEngine.Modules" Version="6000.0.36" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!--
+    Build Thunderstore package by calling `dotnet build -c Release -target:PackTS -v d` (verbosity detailed).
+    Publish to Thunderstore by including `-property:PublishTS=true` in the command.
+  -->
+  <Target Name="PackTS" DependsOnTargets="Build" Condition="$(ThunderstorePackable) != 'false'">
+    <Error
+      Text=" PackTS must be called with Release configuration."
+      Condition="'$(Configuration)' != 'Release'"
+    />
+    <PropertyGroup>
+      <BuildArgument Condition="'$(PublishTS)' != 'true'">build</BuildArgument>
+      <BuildArgument Condition="'$(PublishTS)' == 'true'">publish</BuildArgument>
+    </PropertyGroup>
+    <Exec Command="dotnet tool restore" />
+    <Exec Command="dotnet tcli $(BuildArgument) --package-version $(Version)" />
+  </Target>
+
+</Project>

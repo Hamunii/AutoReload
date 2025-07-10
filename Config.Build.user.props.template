@@ -1,0 +1,17 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Set to some BepInEx/plugins/ directory. -->
+    <PluginsDir></PluginsDir>
+  </PropertyGroup>
+
+  <Target Name="DeployFiles" AfterTargets="Build">
+    <Message Text="Deploy → $(PluginsDir)$(AssemblyName).dll" Importance="High" />
+    <Error
+      Text="Plugins directory '$([MSBuild]::NormalizeDirectory($(PluginsDir)))' doesn't exist! Configure PluginsDir to point to a valid path in the Config.Build.user.props file."
+      Condition="!Exists('$(PluginsDir)')"
+    />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsDir)" />
+  </Target>
+
+</Project>
