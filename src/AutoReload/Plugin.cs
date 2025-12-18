@@ -146,14 +146,16 @@ public partial class Plugin : BaseUnityPlugin
                             // looks in PluginInfos for an existing PluginInfo and uses it instead of creating a new one.
                             Chainloader.PluginInfos[metadata.GUID] = pluginInfo;
 
-                            var instance = (BaseUnityPlugin)gameObject.AddComponent(type);
-
                             // Fill in properties that are normally set by Chainloader
                             var tv = Traverse.Create(pluginInfo);
-                            tv.Property<BaseUnityPlugin>(nameof(pluginInfo.Instance)).Value =
-                                instance;
+                            
                             // Loading the assembly from memory causes Location to be lost
                             tv.Property<string>(nameof(pluginInfo.Location)).Value = path;
+                            var instance = (BaseUnityPlugin)gameObject.AddComponent(type);
+
+                            tv.Property<BaseUnityPlugin>(nameof(pluginInfo.Instance)).Value =
+                                instance;
+
                         }
                         catch (Exception e)
                         {
