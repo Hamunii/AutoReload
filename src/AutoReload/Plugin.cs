@@ -148,14 +148,13 @@ public partial class Plugin : BaseUnityPlugin
 
                             // Fill in properties that are normally set by Chainloader
                             var tv = Traverse.Create(pluginInfo);
-                            
+
                             // Loading the assembly from memory causes Location to be lost
                             tv.Property<string>(nameof(pluginInfo.Location)).Value = path;
                             var instance = (BaseUnityPlugin)gameObject.AddComponent(type);
 
                             tv.Property<BaseUnityPlugin>(nameof(pluginInfo.Instance)).Value =
                                 instance;
-
                         }
                         catch (Exception e)
                         {
