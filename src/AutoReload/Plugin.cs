@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,6 +25,7 @@ public partial class Plugin : BaseUnityPlugin
     static DefaultAssemblyResolver defaultResolver = null!;
     static FileSystemWatcher fileSystemWatcher = null!;
     static Dictionary<string, string> pathToId = [];
+    static ConcurrentDictionary<string, bool> pendingReloads = new();
 
     private void Awake()
     {
@@ -47,6 +49,19 @@ public partial class Plugin : BaseUnityPlugin
         Logger.LogInfo($"Plugin {Name} is loaded!");
     }
 
+    private void Update()
+    {
+        foreach (var path in pendingReloads.Keys)
+        {
+            pendingReloads.Remove(path, out _);
+            
+            if (!QuietMode.Value)
+                Logger.LogInfo($"File '{Path.GetFileName(path)}' changed.");
+            
+            LoadPlugin(path);
+        }
+    }
+
     private void StartFileSystemWatcher()
     {
         fileSystemWatcher = new(Paths.PluginPath)
@@ -62,10 +77,7 @@ public partial class Plugin : BaseUnityPlugin
 
     private void FileChangedEventHandler(object sender, FileSystemEventArgs args)
     {
-        if (!QuietMode.Value)
-            Logger.LogInfo($"File '{Path.GetFileName(args.Name)}' changed.");
-
-        LoadPlugin(args.FullPath);
+        pendingReloads.TryAdd(args.FullPath, true);
     }
 
     void UnloadPlugin(string path)
