@@ -4,6 +4,8 @@ A BepInEx 5 plugin that automatically reloads plugins by watching `BepInEx/plugi
 
 > [!WARNING]  
 > I have been informed that the `FileSystemWatcher` may work terribly on Windows. This plugin relies on `FileSystemWatcher` working properly. If you are having issues with it, try running under Linux.
+>
+> Also, if BepInEx is not configured to hide plugin manager gameObject, this plugin will not work properly. Set `HideManagerGameObject` to `true` in `BepInEx.cfg` if this plugin is not working. This setting is enabled by default in BepInExPack for PEAK.
 
 ## Implementing Support
 

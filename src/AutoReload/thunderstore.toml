@@ -36,9 +36,10 @@ target = "/"
 [publish]
 # See communities at:
 # https://thunderstore.io/api/experimental/community/
-communities = [ "peak", ]
+communities = [ "peak", "repo" ]
 
 [publish.categories]
 # See categories at:
 # https://thunderstore.io/api/experimental/community/peak/category/
-peak = [ "client", "tools", "qol", ]
+peak = [ "client", "tools", ]
+repo = [ "clientside", "tools", ]
