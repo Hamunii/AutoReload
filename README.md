@@ -30,7 +30,27 @@ public partial class Plugin : BaseUnityPlugin
 ```
 
 > [!TIP]  
-> The above plugin uses [Hamunii.BepInEx.AutoPlugin](<https://github.com/Hamunii/BepInEx.AutoPlugin>) for the `[BepInAutoPlugin]` attribute.
+> The above plugin uses [Hamunii.BepInEx.AutoPlugin](<https://github.com/Hamunii/BepInEx.AutoPlugin>) for the `[BepInAutoPlugin]` attribute, and [MonoDetour](<https://github.com/MonoDetour/MonoDetour>) for hooking.
+
+## Limitations
+
+### Fixable Limitations
+
+- If mod A and B are both reloaded, and A depends on B, A will reference the first ever loaded version of B.
+  - AutoReload would need to detect that A depends B, and rewrite A's references to B to reference the latest B assembly before A is reloaded.
+  - Currently this can be worked around by using [ILRepack](<https://github.com/gluck/il-repack>) or [ILRepack.Lib.MSBuild.Task](<https://github.com/ravibpatel/ILRepack.Lib.MSBuild.Task>).
+- Reloaded plugins don't retain any state.
+
+### Runtime Limitations
+
+- Old assemblies are never actually unloaded because it's impossible.
+
+## Alternatives
+
+- <https://github.com/xiaoxiao921/UnityHotReload/>
+  - UnityHotReload preserves the existing runtime state by redirecting all active references to the original type definitions.
+- <https://github.com/BepInEx/BepInEx.Debug#scriptengine>
+  - AutoReload is a hard fork of this. For comparison, see the Credits below.
 
 ## Credits
 
