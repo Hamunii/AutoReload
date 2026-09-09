@@ -11,13 +11,14 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using Mono.Cecil;
+using UnityEngine;
 
 namespace AutoReload;
 
 [BepInAutoPlugin]
 public partial class Plugin : BaseUnityPlugin
 {
-    static ConfigEntry<bool> QuietMode { get; set; } = null!;
+    internal static ConfigEntry<bool> QuietMode { get; set; } = null!;
     static readonly string dumpedAssembliesPath = Path.Combine(
         Paths.BepInExRootPath,
         "AutoReloadDumpedAssemblies"
@@ -25,10 +26,16 @@ public partial class Plugin : BaseUnityPlugin
     static DefaultAssemblyResolver defaultResolver = null!;
     static FileSystemWatcher fileSystemWatcher = null!;
     static Dictionary<string, string> pathToId = [];
-    static ConcurrentDictionary<string, bool> pendingReloads = new();
+    internal static ConcurrentDictionary<string, bool> pendingReloads = new();
+    internal static new ManualLogSource Logger { get; private set; } = null!;
+    internal static Plugin Instance { get; private set; } = null!;
+    static Reloader reloader = null!;
 
     private void Awake()
     {
+        Logger = base.Logger;
+        Instance = this;
+
         defaultResolver = new DefaultAssemblyResolver();
         defaultResolver.AddSearchDirectory(Paths.PluginPath);
         defaultResolver.AddSearchDirectory(Paths.ManagedPath);
@@ -44,25 +51,19 @@ public partial class Plugin : BaseUnityPlugin
         if (Directory.Exists(dumpedAssembliesPath))
             Directory.Delete(dumpedAssembliesPath, true);
 
+        var go = new GameObject($"{Id}:Reloader")
+        {
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        DontDestroyOnLoad(go);
+        reloader = go.AddComponent<Reloader>();
+
         StartFileSystemWatcher();
 
-        Logger.LogInfo($"Plugin {Name} is loaded!");
+        base.Logger.LogInfo($"Plugin {Name} is loaded!");
     }
 
-    private void Update()
-    {
-        foreach (var path in pendingReloads.Keys)
-        {
-            pendingReloads.Remove(path, out _);
-            
-            if (!QuietMode.Value)
-                Logger.LogInfo($"File '{Path.GetFileName(path)}' changed.");
-            
-            LoadPlugin(path);
-        }
-    }
-
-    private void StartFileSystemWatcher()
+    private static void StartFileSystemWatcher()
     {
         fileSystemWatcher = new(Paths.PluginPath)
         {
@@ -75,12 +76,12 @@ public partial class Plugin : BaseUnityPlugin
         fileSystemWatcher.EnableRaisingEvents = true;
     }
 
-    private void FileChangedEventHandler(object sender, FileSystemEventArgs args)
+    private static void FileChangedEventHandler(object sender, FileSystemEventArgs args)
     {
         pendingReloads.TryAdd(args.FullPath, true);
     }
 
-    void UnloadPlugin(string path)
+    static void UnloadPlugin(string path)
     {
         if (!pathToId.TryGetValue(path, out var id))
             return;
@@ -92,7 +93,7 @@ public partial class Plugin : BaseUnityPlugin
         Destroy(plugin.Instance);
     }
 
-    void LoadPlugin(string path)
+    internal static void LoadPlugin(string path)
     {
         if (!File.Exists(path))
         {
@@ -141,7 +142,7 @@ public partial class Plugin : BaseUnityPlugin
                 var typeDefinition = dll.MainModule.Types.First(x => x.FullName == type.FullName);
                 var pluginInfo = Chainloader.ToPluginInfo(typeDefinition);
 
-                StartCoroutine(
+                reloader.StartCoroutine(
                     DelayAction(() =>
                     {
                         if (!QuietMode.Value)
@@ -163,7 +164,7 @@ public partial class Plugin : BaseUnityPlugin
 
                             // Loading the assembly from memory causes Location to be lost
                             tv.Property<string>(nameof(pluginInfo.Location)).Value = path;
-                            var instance = (BaseUnityPlugin)gameObject.AddComponent(type);
+                            var instance = (BaseUnityPlugin)Instance.gameObject.AddComponent(type);
 
                             tv.Property<BaseUnityPlugin>(nameof(pluginInfo.Instance)).Value =
                                 instance;
@@ -185,7 +186,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    private IEnumerable<Type> GetTypesSafe(Assembly ass)
+    private static IEnumerable<Type> GetTypesSafe(Assembly ass)
     {
         try
         {
@@ -197,9 +198,25 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    private IEnumerator DelayAction(Action action)
+    static IEnumerator DelayAction(Action action)
     {
         yield return null;
         action();
+    }
+}
+
+public class Reloader : MonoBehaviour
+{
+    private void Update()
+    {
+        foreach (var path in Plugin.pendingReloads.Keys)
+        {
+            Plugin.pendingReloads.Remove(path, out _);
+
+            if (!Plugin.QuietMode.Value)
+                Plugin.Logger.LogInfo($"File '{Path.GetFileName(path)}' changed.");
+
+            Plugin.LoadPlugin(path);
+        }
     }
 }
